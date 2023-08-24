@@ -19,20 +19,10 @@ REAR_MOTOR = port.C
 ACCELERATION = 1000
 STOP_BEHAVIOR = motor.SMART_BRAKE
 ROTATION_DISTANCE = 27.4
+ARM_SPEED = 100
 
 # speed is in degrees of rotation per second 
 MAX_SPEED = 1000
-
-# returns absolute value of num
-def abs(num):
-    if num > 0:
-        return num
-    return -num
-
-def min(a, b):
-    if a < b:
-        return a
-    return b
 
 def yaw_angle():
     return motion_sensor.tilt_angles()[0] / 10
@@ -42,7 +32,8 @@ async def reset_yaw_angle():
     # wait for yaw to actually reset
     while motion_sensor.tilt_angles()[0] != 0:
         runloop.sleep_ms(10)
-        
+
+
 class Motion:
     def __init__(self, left_motor_port, right_motor_port, rotation_distance):
         self.pair = motor_pair.PAIR_1
@@ -94,34 +85,50 @@ def blink():
     runloop.sleep_ms(1000)
     light_matrix.show_image(light_matrix.IMAGE_ANGRY)
 
+class Arm:
+    def __init__(self, port):
+        self.port = port
+
+    async def move_arm_position(self, position, speed_percentage=50):
+        speed = speed_percentage * ARM_SPEED
+        await motor.run_to_relative_position(self.port, position, speed)
+    
+
 
 def configure():
     global MOTION
+    global FRONT_ARM
+    global REAR_ARM
     MOTION = Motion(LEFT_WHEEL_PORT, RIGHT_WHEEL_PORT, 27.4)
+    FRONT_ARM = Arm(FRONT_MOTOR)
+    REAR_ARM = Arm(REAR_MOTOR)
+
+
+async def mission_one():
+    await FRONT_ARM.move_arm_position(100)
+    await MOTION.move_distance(25)
+    await MOTION.turn_relative(-90)
+    await MOTION.move_distance(33)
+    await MOTION.turn_relative(-15)
+    await FRONT_ARM.move_arm_position(-80)
+    await FRONT_ARM.move_arm_position(100)
 
 # This is the main function. It is like the "when program starts" block in scratch
 async def main():
     print('main loop') # This text is printed to the terminal
 
     # write your code here
-    
-    
-
     # The await keyboard makes the app wait until the line is done before moving to the next line
-    await light_matrix.write("Hi!")
-    blink()
-
+    await light_matrix.write("loser")
     configure()
     
-    await MOTION.move_distance(30)
-    await MOTION.turn_relative(135)
-    await MOTION.move_distance(42.42)
-    await MOTION.turn_relative(135)
-    await MOTION.move_distance(30)
-    await MOTION.turn_relative(90)
-    blink()
+ 
+    #await MOTION.move_distance(30)
+    #await MOTION.turn_relative(90)
+    #await FRONT_ARM.move_arm_position(-100)
 
-
+    mission_one()
+ 
 
 
 
